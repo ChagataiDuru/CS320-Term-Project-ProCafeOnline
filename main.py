@@ -10,7 +10,7 @@ def initializeDb():
     c = conn.cursor()
     c.execute('CREATE TABLE IF NOT EXISTS program_info (opened_before INTEGER)')
     c.execute('CREATE TABLE IF NOT EXISTS accounts (username TEXT, password TEXT)')
-    c.execute('CREATE TABLE IF NOT EXISTS tables (name TEXT, duration INTEGER, type TEXT, open_close INTEGER, feePerMinute REAL, fee REAL, feeFromDuration REAL, feeFromCafe REAL)')
+    c.execute('CREATE TABLE IF NOT EXISTS tables (name TEXT, type TEXT, open_close INTEGER, feePerMinute REAL, image_path REAL)')
     c.execute('CREATE TABLE IF NOT EXISTS cafe_items (name TEXT, type TEXT, cost REAL, description TEXT, image_path TEXT)')
     c.execute('CREATE TABLE IF NOT EXISTS fees (table_id INTEGER, price REAL, duration INTEGER)')
     c.execute('INSERT INTO program_info VALUES (?)', (1,))
