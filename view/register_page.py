@@ -2,8 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from ttkthemes import ThemedTk
 
+from controller.register_page_controller import * # import register_page_controller.py
+
 def clickCreateAccount():
-    global app
     app = ThemedTk(theme="equilux")
     app.title("Register Page")
     app.geometry("1280x720")
@@ -36,7 +37,7 @@ def clickCreateAccount():
     password_entry = ttk.Entry(main_frame)
     password_entry.place(relx=0.5, rely=0.77, anchor="center", width=200, height=35)
 
-    register_button = ttk.Button(main_frame, text="Register")
+    register_button = ttk.Button(main_frame, text="Register", command=lambda: register(name_entry, password_entry,app))
     register_button.place(relx=0.5, rely=0.90, anchor="center", width=200, height=35)
 
     app.mainloop()
