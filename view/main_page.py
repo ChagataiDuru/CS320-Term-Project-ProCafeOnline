@@ -115,6 +115,10 @@ def mainPage():
     open_close_button = ttk.Button(button_frame, text="Open/Close Table", command=lambda: toggle_open_close(table_tree))
     open_close_button.pack(pady=5)
 
+    # Print Fee Button
+    print_fee_button = ttk.Button(button_frame, text="Print Fee", command=lambda: print_fee(table_tree))
+    print_fee_button.pack(pady=5)
+
     # Reset Button 
     reset_button = ttk.Button(button_frame, text="Reset", command=lambda: reset_table(table_tree))
     reset_button.pack(pady=5)
