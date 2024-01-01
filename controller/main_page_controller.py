@@ -23,8 +23,6 @@ def get_last_registered_user():
     return last_registered_user[0] if last_registered_user else None
 
 #----------------Table Methods--------------------
-# A dictionary to hold the references to the images
-image_refs = {}
 def upload_image(label):
     root = Tk()
     root.withdraw()  # Hide the root window
@@ -37,7 +35,7 @@ def upload_image(label):
 def save_table(name, type, fee, image_path, window, table_tree):
     try:
         fee = int(fee)
-        new_table = Table(name, type, False, fee, 0, 0, image_path)
+        new_table = Table(name, type, False, fee, 0, 0, 0, image_path, 0)
         new_table.save_to_db()
         tables.append(new_table)
         print("TABLES",tables)
@@ -47,13 +45,14 @@ def save_table(name, type, fee, image_path, window, table_tree):
         messagebox.showerror("Error", "Invalid input in one or more fields")
 
 
+# A dictionary to hold the references to the images
+image_refs = {}
 def update_treeview(table_tree: ttk.Treeview):
     global image_refs
     image_refs.clear()  # Clear existing image references
 
     for i in table_tree.get_children():
         table_tree.delete(i)
-
 
     for table in tables:
         print("TABLE",table)
@@ -63,13 +62,15 @@ def update_treeview(table_tree: ttk.Treeview):
             img = img.convert("RGBA")  # Ensure image is in RGBA format
 
             # Resize while preserving transparency
-            img = ImageOps.fit(img, (100, 100), Image.Resampling.LANCZOS, 0, (0.5, 0.5))
+            img = ImageOps.fit(img, (100, 100), Image.Resampling.LANCZOS)
             
             photo = ImageTk.PhotoImage(img)
             image_refs[table.name] = photo
             table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            print("TABLES-Image",tables)
         else:
             table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            print("TABLES-Noimage",tables)
 
 
 def delete_selected_table(table_tree: ttk.Treeview):
