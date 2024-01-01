@@ -1,17 +1,9 @@
-import threading
-import time
-import sqlite3
-
 import tkinter as tk
 from tkinter import *
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk
 from ttkthemes import ThemedTk
 
-from PIL import Image, ImageTk, ImageOps
-
-from model.table import Table 
-from model.cafeitem import CafeItem 
-from model.account import Account
+from controller.main_page_controller import *
 
 def mainPage():
     #DESIGN PART
@@ -47,6 +39,12 @@ def mainPage():
     logo_image = tk.PhotoImage(file="assets/pco_logo_large.png")
     logo_label = ttk.Label(tab1, image=logo_image)
     logo_label.pack(pady=20)
+
+    # Create a welcome message label
+    last_registered_user = get_last_registered_user()
+    welcome_message = f"Welcome {last_registered_user}!" if last_registered_user else "Welcome!"
+    welcome_label = ttk.Label(tab1, text=welcome_message, style='TLabel')
+    welcome_label.pack()
 
     style.configure("Red.TLabel", background="#373737", foreground="white", font=("Roboto", 12))
 
@@ -94,11 +92,11 @@ def mainPage():
         ttk.Label(new_window, text="Upload Image", style='TLabel').grid(row=3, column=0)
         image_path_label = ttk.Label(new_window, text="", style='TLabel')
         image_path_label.grid(row=3, column=1)
-        image_upload_button = ttk.Button(new_window, text="Upload Image", style='TButton')
+        image_upload_button = ttk.Button(new_window, text="Upload Image", style='TButton', command=lambda: upload_image(image_path_label))
         image_upload_button.grid(row=4, column=0, columnspan=2)
 
         # Submit button
-        submit_button = ttk.Button(new_window, text="Add Table", style='TButton')
+        submit_button = ttk.Button(new_window, text="Add Table", style='TButton', command=lambda: save_table(name_entry.get(), type_entry.get(), fee_entry.get(), image_path_label.cget("text"), new_window, table_tree))
         submit_button.grid(row=5, column=1, pady=10)
 
     # Add Table Button 
@@ -106,19 +104,19 @@ def mainPage():
     add_table_button.pack(pady=5)
 
     # Delete Table Button 
-    delete_table_button = ttk.Button(button_frame, text="Delete Table", style='TButton')
+    delete_table_button = ttk.Button(button_frame, text="Delete Table", style='TButton', command=lambda: delete_selected_table(table_tree))
     delete_table_button.pack(pady=5)
 
     # Customize Table Button 
-    customize_table_button = ttk.Button(button_frame, text="Customize Table")
+    customize_table_button = ttk.Button(button_frame, text="Customize Table", command= lambda: open_customize_window(table_tree))
     customize_table_button.pack(pady=5)
 
     # Open/Close Button 
-    open_close_button = ttk.Button(button_frame, text="Open/Close Table")
+    open_close_button = ttk.Button(button_frame, text="Open/Close Table", command=lambda: toggle_open_close(table_tree))
     open_close_button.pack(pady=5)
 
     # Reset Button 
-    reset_button = ttk.Button(button_frame, text="Reset")
+    reset_button = ttk.Button(button_frame, text="Reset", command=reset_table)
     reset_button.pack(pady=5)
 
 
@@ -179,11 +177,11 @@ def mainPage():
 
         # Image Upload Button
         ttk.Label(cafeitem_window, text="Upload Image:").grid(row=4, column=0)
-        image_upload_button = ttk.Button(cafeitem_window, text="Upload")
+        image_upload_button = ttk.Button(cafeitem_window, text="Upload", command=lambda: upload_image(image_path_label))
         image_upload_button.grid(row=4, column=1)
 
         # Submit button
-        submit_button = ttk.Button(cafeitem_window, text="Add Cafe Item")
+        submit_button = ttk.Button(cafeitem_window, text="Add Cafe Item", command=lambda: save_cafeitem(name_entry.get(), type_entry.get(), description_entry.get(), cost_entry.get(), image_path_label.cget("text"), cafeitem_window, cafeitems_tree))
         submit_button.grid(row=5, column=1, pady=10)
 
     # Add Table Button 
@@ -191,15 +189,15 @@ def mainPage():
     add_cafeitem_button.pack(pady=5)
 
     # Delete Table Button 
-    delete_cafeitem_button = ttk.Button(button_frame, text="Delete Cafe Item", style='TButton')
+    delete_cafeitem_button = ttk.Button(button_frame, text="Delete Cafe Item", style='TButton', command=lambda: delete_selected_cafeitem(cafeitems_tree))
     delete_cafeitem_button.pack(pady=5)
 
     # Customize Table Button 
-    customize_cafeitem_button = ttk.Button(button_frame, text="Customize Cafe Item")
+    customize_cafeitem_button = ttk.Button(button_frame, text="Customize Cafe Item", command=lambda: open_customize_cafeitem_window(cafeitems_tree))
     customize_cafeitem_button.pack(pady=5)
 
     # Add Cafe Item to Table 
-    add_cafeitem_to_table_button = ttk.Button(button_frame, text="Add Cafe Item to Table")
+    add_cafeitem_to_table_button = ttk.Button(button_frame, text="Add Cafe Item to Table", command=lambda: add_cafeitem_to_table(cafeitems_tree, table_tree))
     add_cafeitem_to_table_button.pack(pady=5)
 
 
@@ -216,5 +214,8 @@ def mainPage():
     cafeitems_tree.column('Description', stretch=tk.YES, width=100)
     cafeitems_tree.column('Cost', stretch=tk.YES, width=100)
     cafeitems_tree.pack(fill='both', expand=True)
+
+    # Load cafe items from the database
+    load_cafeitems_from_db(cafeitems_tree)
 
     app.mainloop()
