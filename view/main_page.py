@@ -116,7 +116,7 @@ def mainPage():
     open_close_button.pack(pady=5)
 
     # Reset Button 
-    reset_button = ttk.Button(button_frame, text="Reset", command=reset_table)
+    reset_button = ttk.Button(button_frame, text="Reset", command=lambda: reset_table(table_tree))
     reset_button.pack(pady=5)
 
 
@@ -217,5 +217,6 @@ def mainPage():
 
     # Load cafe items from the database
     load_cafeitems_from_db(cafeitems_tree)
+    load_tables_from_db(table_tree)
 
     app.mainloop()

@@ -34,13 +34,13 @@ def upload_image(label):
     if file_path:
         label.config(text=file_path)
 
-# A list to hold the table objects
-tables = []
 def save_table(name, type, fee, image_path, window, table_tree):
     try:
         fee = int(fee)
         new_table = Table(name, type, False, fee, 0, 0, image_path)
         new_table.save_to_db()
+        tables.append(new_table)
+        print("TABLES",tables)
         update_treeview(table_tree)
         window.destroy()
     except ValueError:
@@ -54,7 +54,9 @@ def update_treeview(table_tree: ttk.Treeview):
     for i in table_tree.get_children():
         table_tree.delete(i)
 
-    for table in Table.get_all_tables():
+
+    for table in tables:
+        print("TABLE",table)
         open_close_status = "Open" if table.open_close else "Closed"
         if table.image_path:
             img = Image.open(table.image_path)
@@ -65,9 +67,9 @@ def update_treeview(table_tree: ttk.Treeview):
             
             photo = ImageTk.PhotoImage(img)
             image_refs[table.name] = photo
-            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.fee_per_minute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
         else:
-            table_tree.insert('', 'end', values=(table.name, table.type, table.fee_per_minute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
 
 
 def delete_selected_table(table_tree: ttk.Treeview):
@@ -122,6 +124,8 @@ def update_table(window, table, new_type, new_fee,table_tree: ttk.Treeview):
         new_fee = int(new_fee)
         table.type = new_type
         table.feePerMinute = new_fee
+        new_table = Table(table.name, new_type, table.open_close, new_fee, table.image_path)
+        new_table.update_db()
         update_treeview(table_tree)  # Refresh the treeview
         window.destroy()
     except ValueError:
@@ -181,6 +185,12 @@ def reset_table(table_tree: ttk.Treeview):
             selected_table.feeFromCafe = 0 
             selected_table.feeFromDuration = 0 
             update_treeview(table_tree)
+
+def load_tables_from_db(table_tree: ttk.Treeview):
+    print("Loading tables from database...")
+    global tables
+    tables = Table.get_all_tables()
+    update_treeview(table_tree)
 
 #---------------------Cafe Item Methods-----------------------------
 
