@@ -1,6 +1,7 @@
 import threading
 import time
 import sqlite3
+from datetime import datetime, timedelta
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Tk
@@ -206,23 +207,30 @@ def print_fee(table_tree: ttk.Treeview):
 
         selected_table = next((table for table in tables if table.name == table_name), None)
         if selected_table:
-            feeFromDuration = selected_table.duration/60 * selected_table.feePerMinute
+            feeFromDuration = selected_table.duration/3600 * selected_table.feePerMinute
+            feeFromDuration = round(feeFromDuration, 2)
+            selected_table.fee = feeFromDuration + selected_table.feeFromCafe
             print("Duration: ", selected_table.duration)
             print("Fee from duration: ", feeFromDuration)
             print("Fee from cafe: ", selected_table.feeFromCafe)
             print("Total fee: ", selected_table.fee)
+            feemodel = Fee(selected_table.name, selected_table.fee, selected_table.duration)
+            feemodel.save_to_db()
+
 
     # data which we are going to be displayed in a  tabular format
-    todayDate = time.strftime("%d/%m/%Y")
+    utc_now = datetime.utcnow()
+    utc_3 = utc_now + timedelta(hours=3)
+    formatted_date = utc_3.strftime("%d/%m/%Y %H:%M:%S")
     tableData = [
 
-    [todayDate, "Fee Name", "Amount"],
+    [formatted_date, "Fee Name", "Amount"],
         ["", "Fee from duration", feeFromDuration],
         ["", "Fee from cafe", selected_table.feeFromCafe],
         ["", "Total fee", selected_table.fee]
     ]
     # creating a Document structure with A4 size page
-    invoice_name = "Invoice for " + selected_table.name + ".pdf"
+    invoice_name = "Invoice-" + selected_table.name + ".pdf"
     docu = SimpleDocTemplate(invoice_name, pagesize=A4)
 
     styles = getSampleStyleSheet()
