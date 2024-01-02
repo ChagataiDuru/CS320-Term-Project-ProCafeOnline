@@ -1,13 +1,21 @@
 import threading
 import time
 import sqlite3
+from datetime import datetime, timedelta
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Tk
 from PIL import Image, ImageTk, ImageOps
 
+from reportlab.platypus import SimpleDocTemplate, Paragraph, TableStyle
+from reportlab.platypus import Table as ReportLabTable
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+
 from model.table import Table
 from model.cafeitem import CafeItem
+from model.fee import Fee
 
 #----------------METHODS PART----------------
 
@@ -66,10 +74,10 @@ def update_treeview(table_tree: ttk.Treeview):
             
             photo = ImageTk.PhotoImage(img)
             image_refs[table.name] = photo
-            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration/60, table.fee, open_close_status))
             print("TABLES-Image",tables)
         else:
-            table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration/60, table.fee, open_close_status))
             print("TABLES-Noimage",tables)
 
 
@@ -145,11 +153,14 @@ def toggle_open_close(table_tree: ttk.Treeview):
             selected_table.open_close = not selected_table.open_close
 
             if selected_table.open_close:
-                # If the table is now open, start the timer
-                start_timer(selected_table,table_tree)
+                # If the table is now open, start the timer and change the row color to green
+                start_timer(selected_table, table_tree)
+                print("Open")
             else:
-                # If the table is now closed, stop the timer and calculate the total fee
-                stop_timer(selected_table)
+                # If the table is now closed, stop the timer, calculate the total fee and remove the green color
+                stop_timer(selected_table, table_tree)
+                print("Close")
+ 
             update_treeview(table_tree)
 
 
@@ -169,8 +180,11 @@ def start_timer(table,table_tree: ttk.Treeview):
     t.start()
 
 
-def stop_timer(table):
+def stop_timer(table,table_tree: ttk.Treeview):
+    timerFee = table.duration/60 * table.feePerMinute
+    table.fee += round(timerFee, 2)
     table.timer_running = False
+    update_treeview(table_tree)
 
 
 def reset_table(table_tree: ttk.Treeview):
@@ -192,6 +206,57 @@ def load_tables_from_db(table_tree: ttk.Treeview):
     global tables
     tables = Table.get_all_tables()
     update_treeview(table_tree)
+
+def print_fee(table_tree: ttk.Treeview):
+    selected_item = table_tree.selection()
+    if selected_item:
+        item_values = table_tree.item(selected_item, 'values')
+        table_name = item_values[0]
+
+        selected_table = next((table for table in tables if table.name == table_name), None)
+        if selected_table:
+            feeFromDuration = selected_table.duration/60 * selected_table.feePerMinute
+            feeFromDuration = round(feeFromDuration, 2)
+            selected_table.fee = feeFromDuration + selected_table.feeFromCafe
+            print("Duration: ", selected_table.duration)
+            print("Fee from duration: ", feeFromDuration)
+            print("Fee from cafe: ", selected_table.feeFromCafe)
+            print("Total fee: ", selected_table.fee)
+            feemodel = Fee(selected_table.name, selected_table.fee, selected_table.duration)
+            feemodel.save_to_db()
+
+
+    # data which we are going to be displayed in a  tabular format
+    utc_now = datetime.utcnow()
+    utc_3 = utc_now + timedelta(hours=3)
+    formatted_date = utc_3.strftime("%d/%m/%Y %H:%M:%S")
+    tableData = [
+
+    [formatted_date, "Fee Name", "Amount"],
+        ["", "Fee from duration", feeFromDuration],
+        ["", "Fee from cafe", selected_table.feeFromCafe],
+        ["", "Total fee", selected_table.fee]
+    ]
+    # creating a Document structure with A4 size page
+    invoice_name = "Invoice-" + selected_table.name + ".pdf"
+    docu = SimpleDocTemplate(invoice_name, pagesize=A4)
+
+    styles = getSampleStyleSheet()
+
+    doc_style = styles["Heading1"]
+    doc_style.alignment = 1
+
+    title = Paragraph("TABLE INVOICE", doc_style)
+    style = TableStyle([
+            ("BOX", (0, 0), (-1, -1), 1, colors.black),
+            ("GRID", (0, 0), (4, 4), 1, colors.chocolate),
+            ("BACKGROUND", (0, 0), (3, 0), colors.skyblue),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+        ])
+    table = ReportLabTable(tableData, style=style)
+    docu.build([title, table])
 
 #---------------------Cafe Item Methods-----------------------------
 
@@ -325,6 +390,7 @@ def update_table_fee(table_name, cafeitem_cost, window, table_tree):
         if table.name == table_name:
             table.feeFromCafe += cafeitem_cost
             table.fee = table.feeFromCafe + table.feeFromDuration
+            print("TABLE FEE",table.fee)
             update_treeview(table_tree)  # Update the table_tree in the Table Menu tab
             break
     window.destroy()
