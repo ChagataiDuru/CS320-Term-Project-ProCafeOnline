@@ -93,6 +93,7 @@ def delete_selected_table(table_tree: ttk.Treeview):
 
         # Remove the corresponding table object from the database
         Table.delete_table(table_name)
+        tables.pop([table.name for table in tables].index(table_name))  # Remove the table object from the 'tables' list
 
 def customize_window(table,table_tree: ttk.Treeview):
     # Create a new window
@@ -353,6 +354,7 @@ def delete_selected_cafeitem(cafeitems_tree: ttk.Treeview):
         # Remove the corresponding cafe item from the 'cafeitems' list
         cafeitems = [item for item in cafeitems if item.name != cafeitem_name]
         CafeItem.delete_cafeitem(cafeitem_name)
+        cafeitems_array.pop([item.name for item in cafeitems_array].index(cafeitem_name))  # Remove the cafe item object from the 'cafeitems' list
 
 def open_customize_cafeitem_window(cafeitems_tree: ttk.Treeview):
     selected_item = cafeitems_tree.selection()
