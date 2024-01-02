@@ -13,7 +13,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 
-from model import Table, CafeItem,Fee
+from model.table import Table
+from model.cafeitem import CafeItem
+from model.fee import Fee
 
 #----------------METHODS PART----------------
 
@@ -72,10 +74,10 @@ def update_treeview(table_tree: ttk.Treeview):
             
             photo = ImageTk.PhotoImage(img)
             image_refs[table.name] = photo
-            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', image=photo, values=(table.name, table.type, table.feePerMinute, table.duration/60, table.fee, open_close_status))
             print("TABLES-Image",tables)
         else:
-            table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration, table.fee, open_close_status))
+            table_tree.insert('', 'end', values=(table.name, table.type, table.feePerMinute, table.duration/60, table.fee, open_close_status))
             print("TABLES-Noimage",tables)
 
 
@@ -151,11 +153,14 @@ def toggle_open_close(table_tree: ttk.Treeview):
             selected_table.open_close = not selected_table.open_close
 
             if selected_table.open_close:
-                # If the table is now open, start the timer
-                start_timer(selected_table,table_tree)
+                # If the table is now open, start the timer and change the row color to green
+                start_timer(selected_table, table_tree)
+                print("Open")
             else:
-                # If the table is now closed, stop the timer and calculate the total fee
-                stop_timer(selected_table)
+                # If the table is now closed, stop the timer, calculate the total fee and remove the green color
+                stop_timer(selected_table, table_tree)
+                print("Close")
+ 
             update_treeview(table_tree)
 
 
@@ -175,8 +180,11 @@ def start_timer(table,table_tree: ttk.Treeview):
     t.start()
 
 
-def stop_timer(table):
+def stop_timer(table,table_tree: ttk.Treeview):
+    timerFee = table.duration/60 * table.feePerMinute
+    table.fee += round(timerFee, 2)
     table.timer_running = False
+    update_treeview(table_tree)
 
 
 def reset_table(table_tree: ttk.Treeview):
@@ -207,7 +215,7 @@ def print_fee(table_tree: ttk.Treeview):
 
         selected_table = next((table for table in tables if table.name == table_name), None)
         if selected_table:
-            feeFromDuration = selected_table.duration/3600 * selected_table.feePerMinute
+            feeFromDuration = selected_table.duration/60 * selected_table.feePerMinute
             feeFromDuration = round(feeFromDuration, 2)
             selected_table.fee = feeFromDuration + selected_table.feeFromCafe
             print("Duration: ", selected_table.duration)
