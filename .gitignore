@@ -1,3 +1,4 @@
 .assets/__MACOSX
 .DS_Store
 *.pyc
+database.sqlite

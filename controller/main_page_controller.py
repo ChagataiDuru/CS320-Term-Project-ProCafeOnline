@@ -352,7 +352,6 @@ def delete_selected_cafeitem(cafeitems_tree: ttk.Treeview):
         cafeitems_tree.delete(selected_item)
 
         # Remove the corresponding cafe item from the 'cafeitems' list
-        cafeitems = [item for item in cafeitems if item.name != cafeitem_name]
         CafeItem.delete_cafeitem(cafeitem_name)
         cafeitems_array.pop([item.name for item in cafeitems_array].index(cafeitem_name))  # Remove the cafe item object from the 'cafeitems' list
 
