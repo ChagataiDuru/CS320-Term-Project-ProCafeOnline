@@ -6,8 +6,13 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, Tk
 from PIL import Image, ImageTk, ImageOps
 
-from model.table import Table
-from model.cafeitem import CafeItem
+from reportlab.platypus import SimpleDocTemplate, Paragraph, TableStyle
+from reportlab.platypus import Table as ReportLabTable
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+
+from model import Table, CafeItem,Fee
 
 #----------------METHODS PART----------------
 
@@ -193,6 +198,50 @@ def load_tables_from_db(table_tree: ttk.Treeview):
     tables = Table.get_all_tables()
     update_treeview(table_tree)
 
+def print_fee(table_tree: ttk.Treeview):
+    selected_item = table_tree.selection()
+    if selected_item:
+        item_values = table_tree.item(selected_item, 'values')
+        table_name = item_values[0]
+
+        selected_table = next((table for table in tables if table.name == table_name), None)
+        if selected_table:
+            feeFromDuration = selected_table.duration/60 * selected_table.feePerMinute
+            print("Duration: ", selected_table.duration)
+            print("Fee from duration: ", feeFromDuration)
+            print("Fee from cafe: ", selected_table.feeFromCafe)
+            print("Total fee: ", selected_table.fee)
+
+    # data which we are going to be displayed in a  tabular format
+    todayDate = time.strftime("%d/%m/%Y")
+    tableData = [
+
+    [todayDate, "Fee Name", "Amount"],
+        ["", "Fee from duration", feeFromDuration],
+        ["", "Fee from cafe", selected_table.feeFromCafe],
+        ["", "Total fee", selected_table.fee]
+    ]
+    # creating a Document structure with A4 size page
+    invoice_name = "Invoice for " + selected_table.name + ".pdf"
+    docu = SimpleDocTemplate(invoice_name, pagesize=A4)
+
+    styles = getSampleStyleSheet()
+
+    doc_style = styles["Heading1"]
+    doc_style.alignment = 1
+
+    title = Paragraph("TABLE INVOICE", doc_style)
+    style = TableStyle([
+            ("BOX", (0, 0), (-1, -1), 1, colors.black),
+            ("GRID", (0, 0), (4, 4), 1, colors.chocolate),
+            ("BACKGROUND", (0, 0), (3, 0), colors.skyblue),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+        ])
+    table = ReportLabTable(tableData, style=style)
+    docu.build([title, table])
+
 #---------------------Cafe Item Methods-----------------------------
 
 
@@ -325,6 +374,7 @@ def update_table_fee(table_name, cafeitem_cost, window, table_tree):
         if table.name == table_name:
             table.feeFromCafe += cafeitem_cost
             table.fee = table.feeFromCafe + table.feeFromDuration
+            print("TABLE FEE",table.fee)
             update_treeview(table_tree)  # Update the table_tree in the Table Menu tab
             break
     window.destroy()
